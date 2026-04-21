@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SPARK Maklerservice – Website
 
-## Getting Started
+Modern Next.js 14 website for SPARK Maklerservice GmbH.
 
-First, run the development server:
+## Tech Stack
+
+- **Next.js 14** (App Router) · **Tailwind CSS v3** · **Framer Motion** · **TypeScript**
+- **Vercel Blob** for dynamically published blog articles
+- **gray-matter** for MDX frontmatter parsing
+
+---
+
+## Local Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # edit PUBLISH_TOKEN
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Blog Content
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Local (development)
 
-## Learn More
+Add `.mdx` files to `content/blog/` with frontmatter:
 
-To learn more about Next.js, take a look at the following resources:
+```mdx
+---
+title: "Artikel-Titel"
+date: "15. April 2025"
+category: "Einsteiger"
+excerpt: "Kurze Beschreibung"
+coverImage: "https://example.com/bild.jpg"
+metaTitle: "SEO Titel"
+metaDescription: "SEO Beschreibung"
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Inhalt in Markdown...
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Production (n8n integration via Vercel Blob)
 
-## Deploy on Vercel
+Articles published via the API are stored in Vercel Blob and visible without a redeploy.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Endpoint:** `POST /api/publish-article`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+Authorization: Bearer YOUR_PUBLISH_TOKEN
+Content-Type: application/json
+```
+
+```json
+{
+  "title": "Artikel-Titel",
+  "slug": "artikel-slug",
+  "content": "# Inhalt\n\nText...",
+  "category": "Steuern",
+  "excerpt": "Kurze Beschreibung",
+  "coverImage": "https://example.com/bild.jpg",
+  "metaTitle": "SEO-Titel",
+  "metaDescription": "SEO-Beschreibung"
+}
+```
+
+---
+
+## Vercel Deployment
+
+```bash
+# 1. Link to Vercel
+npx vercel link
+
+# 2. Add Blob storage (auto-sets BLOB_READ_WRITE_TOKEN)
+#    Vercel Dashboard → Storage → Create → Blob
+
+# 3. Set environment variables in Vercel dashboard:
+#    PUBLISH_TOKEN  →  your-secret-token
+#    SITE_URL       →  https://spark-maklerservice.com
+
+# 4. Deploy
+npx vercel --prod
+```
+
+### Required env vars
+
+| Variable | Description |
+|---|---|
+| `PUBLISH_TOKEN` | Secret for `/api/publish-article` (n8n) |
+| `BLOB_READ_WRITE_TOKEN` | Auto-set by Vercel Blob integration |
+| `SITE_URL` | Used by next-sitemap for sitemap generation |
+
+---
+
+## Project Structure
+
+```
+app/
+  layout.tsx              Root layout (fonts, metadata, navbar, footer)
+  page.tsx                Homepage (all sections)
+  about/page.tsx          About + team
+  blog/page.tsx           Blog listing
+  blog/[slug]/page.tsx    Blog post
+  kontakt/page.tsx        Contact + Calendly embed
+  api/publish-article/    n8n webhook endpoint
+components/
+  Navbar, Footer, Hero, SocialProof, WhyRealEstate
+  Process, Renditerechner, Testimonials, Team
+  BlogPreview, CTASection
+lib/blog.ts               Blog reader (filesystem + Blob)
+content/blog/             Local MDX files
+```
